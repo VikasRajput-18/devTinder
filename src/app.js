@@ -2,6 +2,8 @@ const express = require("express");
 const dotenv = require("dotenv");
 const { connectToDB } = require("./config/database");
 const { User } = require("./models/user");
+const { validateSignUpData } = require("./utils/validation");
+const bcrypt = require("bcrypt")
 
 
 dotenv.config();
@@ -13,33 +15,20 @@ const app = express();
 app.use(express.json())
 
 app.post("/sign-up", async (req, res) => {
-    const { firstName, lastName, email, password, age, gender } = req.body;
-
-    const userExits = await User.findOne({ email })
-
-    if (userExits) {
-        return res.status(400).json({ message: "Email already exists" })
-    }
-
-
-
     try {
-        const userObj = {
-            firstName,
-            lastName,
-            email,
-            password,
-            age,
-            gender
+        validateSignUpData(req)
+        const { email, password, firstName, lastName, } = req.body;
+        const userExits = await User.findOne({ email }, { runValidators: true })
+        if (userExits) {
+            return res.status(400).json({ message: "Email already exists" })
         }
-
-        // creating a new instance of User model 
-        const user = new User(userObj);
-
+        const hashPassword = await bcrypt.hash(password, 10);
+        const user = new User({ email, firstName, lastName, password: hashPassword });
         await user.save();
         res.status(200).json({ message: "User is successfully added" })
     } catch (error) {
-        res.status(500).json({ message: error || "Something went wrong" })
+        console.log("Signup Error: ", error.message);
+        res.status(500).json({ message: error.message || "Something went wrong" })
     }
 });
 

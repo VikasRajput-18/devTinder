@@ -4,6 +4,9 @@ const { connectToDB } = require("./config/database");
 const { User } = require("./models/user");
 const { validateSignUpData } = require("./utils/validation");
 const bcrypt = require("bcrypt")
+const cookieParser = require("cookie-parser")
+const jwt = require("jsonwebtoken");
+const { authUser } = require("./middleware/auth");
 
 
 dotenv.config();
@@ -13,6 +16,7 @@ const PORT = process.env.PORT || 8000
 
 const app = express();
 app.use(express.json())
+app.use(cookieParser())
 
 app.post("/sign-up", async (req, res) => {
     try {
@@ -32,44 +36,37 @@ app.post("/sign-up", async (req, res) => {
     }
 });
 
-
-app.get("/feed", async (req, res) => {
+app.post("/sign-in", async (req, res) => {
     try {
+        const { email, password } = req.body
+        const userExits = await User.findOne({ email })
+        if (!userExits) {
+            return res.status(400).json({ message: "Invalid Credentials" })
+        }
+        const matchPassword = await bcrypt.compare(password, userExits.password);
 
-        const user = await User.find({});
-        res.status(200).json({ data: user })
-    } catch (error) {
-        res.status(500).json({ message: "Something went wrong" })
+        if (!matchPassword) {
+            return res.status(400).json({ message: "Invalid Credentials" })
+        }
+        const token = jwt.sign({ userId: userExits._id }, process.env.JWT_SECRET_TOKEN)
+        res.cookie("token", token)
+
+        return res.status(200).json({ message: "Login Successfully" })
+    }
+
+    catch (error) {
+        console.log("Signup Error: ", error.message);
+        res.status(500).json({ message: error.message || "Something went wrong" })
     }
 })
 
-app.delete("/user/:id", async (req, res) => {
+
+app.get("/profile", authUser, async (req, res) => {
     try {
-        const { id } = req.params;
-        console.log(id)
-        await User.findByIdAndDelete(id);
-        return res.status(200).json({ message: "User Deleted Successfully" })
-
-
+        const user = req.user
+        res.status(200).send(user);
     } catch (error) {
-        res.status(500).json({ message: "Something went wrong" })
-    }
-
-})
-
-
-app.patch("/user/:id", async (req, res) => {
-    try {
-        const { id } = req.params
-        const user = await User.findByIdAndUpdate(id, req.body, {
-            returnDocument: "after"
-        })
-
-        console.log("user", user)
-        return res.status(200).json({ message: "User Updated Successfully" })
-    } catch (error) {
-        res.status(500).json({ message: "Something went wrong" })
-
+        res.status(500).json({ message: error.message })
     }
 })
 

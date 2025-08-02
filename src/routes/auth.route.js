@@ -5,6 +5,7 @@ const bcrypt = require("bcrypt");
 
 const { validateSignUpData } = require("../utils/validation");
 const { User } = require("../models/user");
+const { authUser } = require("../middleware/auth");
 
 const authRouter = express.Router();
 
@@ -47,6 +48,27 @@ authRouter.post("/sign-in", async (req, res) => {
 
     catch (error) {
         console.log("Signup Error: ", error.message);
+        res.status(500).json({ message: error.message || "Something went wrong" })
+    }
+})
+
+
+authRouter.post("/logout", authUser, async (req, res) => {
+    try {
+        const user = req.user;
+
+        if (!user || !user._id) {
+            return res.status(400).json({ message: "User not authenticated" });
+        }
+
+        const userExists = await User.findById(user._id);
+        if (!userExists) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        res.clearCookie("token");
+
+        return res.status(200).json({ message: "Successfully Logged out" });
+    } catch (error) {
         res.status(500).json({ message: error.message || "Something went wrong" })
     }
 })

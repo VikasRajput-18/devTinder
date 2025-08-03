@@ -1,4 +1,5 @@
 const express = require("express");
+const bcrypt = require("bcrypt");
 const { authUser } = require("../middleware/auth");
 const { User } = require("../models/user");
 const { validateEditProfileData } = require("../utils/validation")
@@ -37,13 +38,46 @@ profileRouter.patch("/profile/edit", authUser, async (req, res) => {
 
         await existingUser.save()
 
-        return res.status(200).json({ message: `${existingUser.firstName}, your profile updated successfully!` })
+        return res.status(200).json({ message: `${existingUser.firstName}, your profile updated successfully!`, data: existingUser })
 
     } catch (error) {
         return res.status(500).json({ message: error.message || "Something went wrong" })
     }
 
 
+})
+
+
+profileRouter.patch("/profile/reset-password", authUser, async (req, res) => {
+    try {
+        const existingUser = req.user;
+        const { oldPassword, newPassword } = req.body;
+
+        if (!oldPassword || !newPassword) {
+            return res.status(400).json({ message: "All fields are required" });
+        }
+
+        // const isMatchedPassword = await existingUser.validatePassword(oldPassword);
+
+
+        const isMatchedPassword = await bcrypt.compare(oldPassword, existingUser.password);
+
+        if (!isMatchedPassword) {
+            return res.status(401).json({ message: "Old Password is not correct" })
+        }
+
+        let newHashedPassword = await bcrypt.hash(newPassword, 10);
+
+        existingUser.password = newHashedPassword
+
+        await existingUser.save()
+
+        return res.status(201).json({ message: "Password Updated" })
+
+
+    } catch (error) {
+        return res.status(500).json({ message: error.message || "Something went wrong" })
+    }
 })
 
 module.exports = profileRouter

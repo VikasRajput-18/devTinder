@@ -36,7 +36,10 @@ const userSchema = new Schema({
     },
     gender: {
         type: String,
-        enum: ["male", "female", "others"]
+        enum: {
+            values: ["male", "female", "others"],
+            message: `{VALUE} is not valid gender type`
+        }
     },
 
     photoUrl: {

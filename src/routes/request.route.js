@@ -76,13 +76,61 @@ requestRouter.post("/request/send/:status/:receiverId", authUser, async (req, re
         };
 
         return res.status(201).json({
-            message: messages[action] || "Invalid action",
+            message: messages[status] || "Invalid Status",
             request: sendConnection,
         })
 
     } catch (error) {
         return res.status(500).json({ message: error.message || "Something went wrong" })
 
+    }
+})
+
+
+requestRouter.post("/request/review/:status/:requestId", authUser, async (req, res) => {
+    try {
+        const { status, requestId } = req.params
+        const loggedInUser = req.user;
+
+        if (!requestId) {
+            return res.status(400).json({ message: "Request ID is required" })
+        }
+
+        if (!mongoose.isValidObjectId(requestId)) {
+            return res.status(400).json({ message: "Invalid receiver ID format" });
+        }
+
+        const allowedStatuses = ["accepted", "rejected"]
+
+        if (!allowedStatuses.includes(status)) {
+            return res.status(400).json({
+                message: `${status} is not a valid status. Allowed values: ${allowedStatuses.join(", ")}`,
+
+            })
+        }
+
+        const connectionRequest = await ConnectionRequestModel.findOne({
+            _id: requestId,
+            receiverId : loggedInUser._id,
+            status: "interested"
+        })
+
+        if (!connectionRequest) {
+            return res.status(404).json({ message: "Connection request not found" })
+        }
+
+        connectionRequest.status = status;
+
+        const data = await connectionRequest.save()
+
+        res.status(200).json({
+            message: `Connection Request is ${status}`,
+            data
+        })
+
+
+    } catch (error) {
+        return res.status(500).json({ message: error.message || "Something went wrong" })
     }
 })
 

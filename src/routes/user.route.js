@@ -11,8 +11,13 @@ router.get("/user/connections", authUser, async (req, res) => {
 
         const connections = await ConnectionRequestModel.find({
             status: "accepted",
-            receiverId: loggedInUser._id
-        }).populate({ path: "senderId receiverId", select: "-password" }).exec()
+            $or: [{
+                receiverId: loggedInUser._id,
+            }, {
+                senderId: loggedInUser._id,
+            }
+            ]
+        }).populate({ path: "senderId receiverId", select: "-password -createdAt -updatedAt -__v -email" }).exec()
 
         if (connections.length === 0) {
             return res.status(200).json({ message: "No Connections Found", data: connections })
@@ -31,7 +36,7 @@ router.get("/user/requests/received", authUser, async (req, res) => {
         const connectionsRequests = await ConnectionRequestModel.find({
             status: "interested",
             receiverId: loggedInUser._id
-        }).populate({ path: "senderId receiverId", select: "-password" }).exec()
+        }).populate({ path: "senderId receiverId", select: "-password -createdAt -updatedAt -__v -email" }).exec()
 
         return res.status(200).json({ data: connectionsRequests })
 

@@ -17,13 +17,12 @@ router.get("/user/connections", authUser, async (req, res) => {
                 senderId: loggedInUser._id,
             }
             ]
-        }).populate({ path: "senderId receiverId", select: "-password -createdAt -updatedAt -__v -email" }).exec()
+        }).populate({ path: "senderId", select: "-password -createdAt -updatedAt -__v -email" }).exec()
 
-        if (connections.length === 0) {
-            return res.status(200).json({ message: "No Connections Found", data: connections })
-        }
+        const data = connections.map((user) => user.senderId)
 
-        return res.status(200).json({ data: connections })
+
+        return res.status(200).json({ data })
 
     } catch (error) {
         return res.status(500).json({ message: error.message || "Something went wrong" })
@@ -36,7 +35,7 @@ router.get("/user/requests/received", authUser, async (req, res) => {
         const connectionsRequests = await ConnectionRequestModel.find({
             status: "interested",
             receiverId: loggedInUser._id
-        }).populate({ path: "senderId receiverId", select: "-password -createdAt -updatedAt -__v -email" }).exec()
+        }).populate({ path: "senderId", select: "-password -createdAt -updatedAt -__v -email" }).exec()
 
         return res.status(200).json({ data: connectionsRequests })
 

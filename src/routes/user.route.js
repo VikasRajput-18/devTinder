@@ -56,13 +56,14 @@ router.get("/user/requests/received", authUser, async (req, res) => {
 
 router.get("/user/feed", authUser, async (req, res) => {
     try {
-        // TODO :
-        // 1.) User should see all the user card
-        //     - he should not see his own card 
-        //     - he should not see his connections 
-        //     - he should not see ignored people 
-        //     - he should not see already sent the connection request 
         const loggedInUser = req.user
+        const page = parseInt(req.query.page) || 1
+        let limit = parseInt(req.query.limit) || 10
+        limit = limit > 50 ? 50 : limit
+        let skip = (page - 1) * limit
+
+
+
 
         const connectionRequest = await ConnectionRequestModel.find({
             $or: [
@@ -74,8 +75,8 @@ router.get("/user/feed", authUser, async (req, res) => {
         const hideUserFromFeed = new Set();
 
         connectionRequest.forEach(request => {
-            hideUserFromFeed.add(request.senderId.toString())
-            hideUserFromFeed.add(request.receiverId.toString())
+            hideUserFromFeed.add(request.senderId)
+            hideUserFromFeed.add(request.receiverId)
         })
 
         const users = await User.find({
@@ -83,9 +84,21 @@ router.get("/user/feed", authUser, async (req, res) => {
                 { _id: { $nin: Array.from(hideUserFromFeed) } },
                 { _id: { $ne: loggedInUser._id } },
             ]
-        }).select("-password -email")
+        }).select("-password -email").limit(limit).skip(skip)
 
-        return res.status(200).json({ data: users })
+        const totalUsers = await User.countDocuments({
+            $and: [
+                { _id: { $nin: Array.from(hideUserFromFeed) } },
+                { _id: { $ne: loggedInUser._id } }
+
+            ]
+        });
+
+        return res.status(200).json({
+            data: users, page,
+            totalPages: Math.ceil(totalUsers / limit),
+            totalCount: totalUsers
+        })
 
 
     } catch (error) {

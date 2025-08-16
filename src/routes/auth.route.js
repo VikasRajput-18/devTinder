@@ -21,7 +21,7 @@ authRouter.post("/sign-up", async (req, res) => {
         const hashPassword = await bcrypt.hash(password, 10);
         const user = new User({ email, firstName, lastName, password: hashPassword });
         await user.save();
-        res.status(200).json({ message: "User is successfully added" })
+        res.status(201).json({ message: "User is successfully created" })
     } catch (error) {
         console.log("Signup Error: ", error.message);
         res.status(500).json({ message: error.message || "Something went wrong" })
@@ -43,7 +43,15 @@ authRouter.post("/sign-in", async (req, res) => {
         const token = await userExits.getJWT();
         res.cookie("token", token, { expires: new Date(Date.now() + 8 * 3600000) })
 
-        return res.status(200).json({ message: "Login Successfully" })
+
+        return res.status(200).json({
+            message: "Login Successfully", data: {
+                _id: userExits._id,
+                firstName: userExits.firstName,
+                lastName: userExits.firstName,
+                photoUrl: userExits.photoUrl,
+            }
+        })
     }
 
     catch (error) {

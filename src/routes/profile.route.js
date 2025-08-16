@@ -10,8 +10,8 @@ const profileRouter = express.Router()
 profileRouter.get("/profile", authUser, async (req, res) => {
     try {
         const user = req.user
-        const { password, ...userDetails } = user._doc
-        res.status(200).send({ user: userDetails });
+        const profile = await User.findById(user._id).select("-password")
+        res.status(200).send({ user: profile });
     } catch (error) {
         res.status(500).json({ message: error.message })
     }
@@ -38,8 +38,10 @@ profileRouter.patch("/profile/edit", authUser, async (req, res) => {
         Object.keys(req.body).forEach((key) => existingUser[key] = req.body[key]);
 
         await existingUser.save()
+        const { password, ...user } = existingUser._doc
 
-        return res.status(200).json({ message: `${existingUser.firstName}, your profile updated successfully!`, data: existingUser })
+
+        return res.status(200).json({ message: `${existingUser.firstName}, your profile updated successfully!`, user: user })
 
     } catch (error) {
         return res.status(500).json({ message: error.message || "Something went wrong" })

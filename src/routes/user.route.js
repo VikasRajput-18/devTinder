@@ -62,9 +62,6 @@ router.get("/user/feed", authUser, async (req, res) => {
         limit = limit > 50 ? 50 : limit
         let skip = (page - 1) * limit
 
-
-
-
         const connectionRequest = await ConnectionRequestModel.find({
             $or: [
                 { senderId: loggedInUser._id },
@@ -84,7 +81,8 @@ router.get("/user/feed", authUser, async (req, res) => {
                 { _id: { $nin: Array.from(hideUserFromFeed) } },
                 { _id: { $ne: loggedInUser._id } },
             ]
-        }).select("-password -email").limit(limit).skip(skip)
+        }).limit(limit).skip(skip)
+            .select("-password -email")
 
         const totalUsers = await User.countDocuments({
             $and: [
@@ -93,9 +91,8 @@ router.get("/user/feed", authUser, async (req, res) => {
 
             ]
         });
-
         return res.status(200).json({
-            data: users, page,
+            users, page,
             totalPages: Math.ceil(totalUsers / limit),
             totalCount: totalUsers
         })

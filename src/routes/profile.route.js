@@ -10,7 +10,8 @@ const profileRouter = express.Router()
 profileRouter.get("/profile", authUser, async (req, res) => {
     try {
         const user = req.user
-        res.status(200).send(user);
+        const { password, ...userDetails } = user._doc
+        res.status(200).send({ user: userDetails });
     } catch (error) {
         res.status(500).json({ message: error.message })
     }

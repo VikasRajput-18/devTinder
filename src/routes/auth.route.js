@@ -48,7 +48,7 @@ authRouter.post("/sign-in", async (req, res) => {
             message: "Login Successfully", data: {
                 _id: userExits._id,
                 firstName: userExits.firstName,
-                lastName: userExits.firstName,
+                lastName: userExits.lastName,
                 photoUrl: userExits.photoUrl,
             }
         })

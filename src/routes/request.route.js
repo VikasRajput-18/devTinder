@@ -5,6 +5,8 @@ const ConnectionRequestModel = require("../models/connectionRequest");
 const mongoose = require("mongoose");
 const requestRouter = express.Router();
 
+const { run: sendEmail } = require("../utils/sendEmail")
+
 const allowedStatuses = ["interested", "ignored"];
 
 requestRouter.post("/request/send/:status/:receiverId", authUser, async (req, res) => {
@@ -70,11 +72,19 @@ requestRouter.post("/request/send/:status/:receiverId", authUser, async (req, re
         })
 
         await sendConnection.save();
+
+
+
         const messages = {
             interested: `You have shown interest in ${receiverUser.firstName}'s profile.`,
             ignored: `You have ignored ${receiverUser.firstName}'s profile.`
         };
 
+        await sendEmail(
+            receiverUser?.email,
+            "Welcome to Dev Tinder 🎉",
+            "Hey there! Thanks for joining Dev Tinder. We're excited to have you onboard. Connect with awesome developers today!"
+        );
         return res.status(201).json({
             message: messages[status] || "Invalid Status",
             request: sendConnection,
@@ -111,7 +121,7 @@ requestRouter.post("/request/review/:status/:requestId", authUser, async (req, r
 
         const connectionRequest = await ConnectionRequestModel.findOne({
             _id: requestId,
-            receiverId : loggedInUser._id,
+            receiverId: loggedInUser._id,
             status: "interested"
         })
 

@@ -80,10 +80,20 @@ requestRouter.post("/request/send/:status/:receiverId", authUser, async (req, re
             ignored: `You have ignored ${receiverUser.firstName}'s profile.`
         };
 
+        const emailMessages = {
+            interested: `Hi ${receiverUser.firstName},  
+Someone has shown interest in your profile on Dev Tinder. 🎉  
+Check it out and decide if you’d like to connect!`,
+
+            ignored: `Hi ${receiverUser.firstName},  
+Someone has chosen not to connect at this time.  
+Don’t worry, keep exploring and you’ll find awesome developers to connect with!`
+        };
+
         await sendEmail(
             receiverUser?.email,
-            "Welcome to Dev Tinder 🎉",
-            "Hey there! Thanks for joining Dev Tinder. We're excited to have you onboard. Connect with awesome developers today!"
+            "Dev Tinder – Connection Update",
+            emailMessages[status] || "There was an update to your profile."
         );
         return res.status(201).json({
             message: messages[status] || "Invalid Status",

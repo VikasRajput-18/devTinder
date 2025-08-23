@@ -2,6 +2,9 @@ const { Server } = require("socket.io");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const cookieParser = require("cookie-parser");
+const { ChatModel } = require("../models/chat");
+const { User } = require("../models/user");
+const ConnectionRequestModel = require("../models/connectionRequest");
 
 
 const getSecretRoomId = (userId, targetUserId) => {
@@ -13,7 +16,7 @@ const getSecretRoomId = (userId, targetUserId) => {
 const initializeSocket = (server) => {
     const io = new Server(server, {
         cors: {
-            origin: "http://localhost:5173",
+            origin: process.env.NODE_DEV === "development" ? "http://localhost:5173" : "vikasrajput18.com",
             credentials: true
         }
     });
@@ -55,10 +58,51 @@ const initializeSocket = (server) => {
             const hashedRoomId = getSecretRoomId(userId, targetUserId)
             socket.join(hashedRoomId)
         })
-        socket.on("sendMessage", ({ firstName, userId, targetUserId, text }) => {
+        socket.on("sendMessage", async ({ lastName, firstName, userId, targetUserId, text }) => {
             const hashedRoomId = getSecretRoomId(userId, targetUserId)
+
+            try {
+
+                // 🔹 Fetch the connection status (adjust this query according to your schema)
+                const connection = await ConnectionRequestModel.findOne({
+                    $or: [
+                        { senderId: userId, receiverId: targetUserId },
+                        { senderId: targetUserId, receiverId: userId },
+                    ],
+                });
+
+                if (!connection || connection.status !== "accepted") {
+                    console.log("❌ Message blocked: connection not accepted");
+                    socket.emit("errorMessage", {
+                        message: "You cannot send a message until the request is accepted.",
+                    });
+                    return; // ⬅ stop here
+                }
+                let chat = await ChatModel.findOne({
+                    participants: {
+                        $all: [userId, targetUserId]
+                    }
+                })
+
+                if (!chat) {
+                    chat = await new ChatModel({
+                        participants: [userId, targetUserId],
+                        messages: []
+                    });
+                }
+
+                chat.messages.push({
+                    senderId: userId,
+                    text
+                })
+
+                await chat.save()
+            } catch (error) {
+                console.log(error)
+            }
+
             io.to(hashedRoomId).emit("messageReceived", {
-                firstName, newMessage: text, userId
+                firstName, newMessage: text, userId, targetUserId, lastName
             })
         })
 

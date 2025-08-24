@@ -20,35 +20,35 @@ const initializeSocket = (server) => {
         }
     });
 
-    // io.use((socket, next) => {
-    //     try {
+    io.use((socket, next) => {
+        try {
 
-    //         const rawCookie = socket.handshake.headers.cookie || "";
-    //         const cookies = cookieParser.JSONCookies(
-    //             Object.fromEntries(
-    //                 rawCookie.split(";").map((c) => {
-    //                     const [k, v] = c.trim().split("=");
-    //                     return [k, decodeURIComponent(v)];
-    //                 })
-    //             )
-    //         )
+            const rawCookie = socket.handshake.headers.cookie || "";
+            const cookies = cookieParser.JSONCookies(
+                Object.fromEntries(
+                    rawCookie.split(";").map((c) => {
+                        const [k, v] = c.trim().split("=");
+                        return [k, decodeURIComponent(v)];
+                    })
+                )
+            )
 
-    //         const token = cookies["token"]; // match your cookie name
-    //         if (!token) {
-    //             return next(new Error("Authentication error: Token missing"));
-    //         }
+            const token = cookies["token"]; // match your cookie name
+            if (!token) {
+                return next(new Error("Authentication error: Token missing"));
+            }
 
-    //         // Verify JWT
-    //         const decoded = jwt.verify(token, process.env.JWT_SECRET_TOKEN);
+            // Verify JWT
+            const decoded = jwt.verify(token, process.env.JWT_SECRET_TOKEN);
 
-    //         // Attach user info to socket
-    //         socket.user = decoded;
-    //         next();
-    //     } catch (error) {
-    //         console.error("Socket auth error:", error.message);
-    //         next(new Error("Authentication failed"));
-    //     }
-    // })
+            // Attach user info to socket
+            socket.user = decoded;
+            next();
+        } catch (error) {
+            console.error("Socket auth error:", error.message);
+            next(new Error("Authentication failed"));
+        }
+    })
 
     io.on("connection", (socket) => {
         console.log("A user connected:", socket.id);

@@ -82,7 +82,7 @@ requestRouter.post("/request/send/:status/:receiverId", authUser, async (req, re
 
         const emailMessages = {
             interested: `Hi ${receiverUser.firstName},  
-Someone has shown interest in your profile on Dev Tinder. 🎉  
+Someone has shown interest in your profile on LinkUp. 🎉  
 Check it out and decide if you’d like to connect!`,
 
             ignored: `Hi ${receiverUser.firstName},  
@@ -92,7 +92,7 @@ Don’t worry, keep exploring and you’ll find awesome developers to connect wi
 
         await sendEmail(
             receiverUser?.email,
-            "Dev Tinder – Connection Update",
+            "LinkUp – Connection Update",
             emailMessages[status] || "There was an update to your profile."
         );
         return res.status(201).json({

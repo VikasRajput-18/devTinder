@@ -28,16 +28,16 @@ cron.schedule("0 8 * * *", async () => {
             try {
                 await sendEmail(
                     email,
-                    "You Have New Connection Requests on Dev Tinder 🔔",
+                    "You Have New Connection Requests on LinkUp 🔔",
                     `Hi there,  
 
-        You received new connection requests yesterday on Dev Tinder.  
+        You received new connection requests yesterday on LinkUp.  
         Log in today to see who’s interested in connecting with you!  
 
         👉 Start connecting: https://vikasrajput18.com/  
 
         Stay awesome,  
-        Team Dev Tinder`
+        Team LinkUp`
                 );
 
 
